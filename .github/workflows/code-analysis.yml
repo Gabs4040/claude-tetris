@@ -1,98 +1,54 @@
-name: Code Analysis
+name: Claude Code Analysis & Implementation
 
 on:
   issues:
     types: [labeled]
 
 jobs:
-  analyze-code:
+  claude-implementation:
     if: github.event.label.name == 'claude-code'
     runs-on: ubuntu-latest
     permissions:
+      contents: write
       issues: write
-      contents: read
+      pull-requests: write
+      id-token: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Analyze code quality
+      - name: Get issue details
+        id: issue
         uses: actions/github-script@v7
         with:
           script: |
-            const fs = require('fs');
-            const path = require('path');
+            const issue = context.payload.issue;
+            console.log('Issue Title:', issue.title);
+            console.log('Issue Body:', issue.body);
+            core.setOutput('title', issue.title);
+            core.setOutput('body', issue.body);
+            core.setOutput('number', issue.number);
 
-            let analysis = '## 📊 Code Analysis Report\n\n';
+      - name: Run Claude Code Analysis & Fix
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Analiza el siguiente issue y realiza los cambios solicitados:
 
-            // Analyze JavaScript file
-            const gameJsPath = 'game.js';
-            if (fs.existsSync(gameJsPath)) {
-              const gameJs = fs.readFileSync(gameJsPath, 'utf8');
-              const lines = gameJs.split('\n');
-              const jsSize = gameJs.length;
+            **Título:** ${{ steps.issue.outputs.title }}
 
-              analysis += `### 📁 game.js\n`;
-              analysis += `- **Lines of code:** ${lines.length}\n`;
-              analysis += `- **File size:** ${(jsSize / 1024).toFixed(2)} KB\n`;
-              analysis += `- **Uses strict mode:** ${gameJs.includes("'use strict'") ? '✅ Yes' : '❌ No'}\n`;
-              analysis += `- **Global variables:** ${(gameJs.match(/^(let|const|var)\s+/gm) || []).length}\n\n`;
+            **Descripción:**
+            ${{ steps.issue.outputs.body }}
 
-              // Check for potential issues
-              const issues = [];
-              if (gameJs.match(/console\.(log|error|warn)/g)) {
-                issues.push('⚠️ Contains console statements (remove in production)');
-              }
-              if (gameJs.match(/eval\(/g)) {
-                issues.push('🔴 Contains eval() (security risk)');
-              }
-              if (gameJs.match(/var\s+/g)) {
-                issues.push('⚠️ Uses var instead of let/const');
-              }
-              if (!gameJs.includes("'use strict'")) {
-                issues.push('⚠️ Missing strict mode');
-              }
+            Por favor:
+            1. Comprende claramente qué se solicita en el issue
+            2. Analiza el código actual del proyecto
+            3. Realiza los cambios necesarios en los archivos
+            4. Asegúrate de que funcione correctamente
+            5. Crea un commit con los cambios realizados
 
-              if (issues.length > 0) {
-                analysis += `### ⚠️ Potential Issues\n`;
-                issues.forEach(issue => {
-                  analysis += `- ${issue}\n`;
-                });
-                analysis += '\n';
-              }
-            }
-
-            // Analyze HTML file
-            const indexPath = 'index.html';
-            if (fs.existsSync(indexPath)) {
-              const html = fs.readFileSync(indexPath, 'utf8');
-              analysis += `### 📄 index.html\n`;
-              analysis += `- **File size:** ${(html.length / 1024).toFixed(2)} KB\n`;
-              analysis += `- **Has meta viewport:** ${html.includes('viewport') ? '✅ Yes' : '❌ No'}\n`;
-              analysis += `- **Has title:** ${html.includes('<title>') ? '✅ Yes' : '❌ No'}\n`;
-              analysis += `- **Canvas elements:** ${(html.match(/<canvas/g) || []).length}\n\n`;
-            }
-
-            // Analyze CSS file
-            const cssPath = 'style.css';
-            if (fs.existsSync(cssPath)) {
-              const css = fs.readFileSync(cssPath, 'utf8');
-              analysis += `### 🎨 style.css\n`;
-              analysis += `- **File size:** ${(css.length / 1024).toFixed(2)} KB\n`;
-              analysis += `- **CSS rules:** ${(css.match(/\{/g) || []).length}\n`;
-              analysis += `- **Uses CSS variables:** ${css.includes('--') ? '✅ Yes' : '❌ No'}\n\n`;
-            }
-
-            analysis += `### ✨ Summary\n`;
-            analysis += `- Project structure: ✅ Clean (3 files)\n`;
-            analysis += `- No build step required: ✅ Good for simplicity\n`;
-            analysis += `- No external dependencies: ✅ Excellent\n`;
-
-            // Post comment on issue
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: analysis
-            });
-
-            console.log('Analysis complete and posted to issue');
+            Si necesitas hacer cambios, hazlos directamente en los archivos del repositorio.
