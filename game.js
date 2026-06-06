@@ -40,7 +40,7 @@ const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
 
-let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
+let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId, levelUpTimer;
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
@@ -106,8 +106,10 @@ function clearLines() {
   if (cleared) {
     lines += cleared;
     score += (LINE_SCORES[cleared] || 0) * level;
+    const prevLevel = level;
     level = Math.floor(lines / 10) + 1;
     dropInterval = Math.max(100, 1000 - (level - 1) * 90);
+    if (level > prevLevel) levelUpTimer = 1500;
     updateHUD();
   }
 }
@@ -205,6 +207,20 @@ function draw() {
   for (let r = 0; r < current.shape.length; r++)
     for (let c = 0; c < current.shape[r].length; c++)
       drawBlock(ctx, current.x + c, current.y + r, current.shape[r][c], BLOCK);
+
+  if (levelUpTimer > 0) {
+    const alpha = levelUpTimer / 1500;
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = '#ffd54f';
+    ctx.font = 'bold 30px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('¡NIVEL ' + level + '!', canvas.width / 2, canvas.height / 2 - 10);
+    ctx.font = '16px monospace';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText('¡Más rápido!', canvas.width / 2, canvas.height / 2 + 20);
+    ctx.globalAlpha = 1;
+    ctx.textAlign = 'left';
+  }
 }
 
 function drawNext() {
@@ -244,6 +260,7 @@ function loop(ts) {
   const dt = ts - lastTime;
   lastTime = ts;
   dropAccum += dt;
+  if (levelUpTimer > 0) levelUpTimer = Math.max(0, levelUpTimer - dt);
   if (dropAccum >= dropInterval) {
     dropAccum = 0;
     if (!collide(current.shape, current.x, current.y + 1)) {
@@ -265,6 +282,7 @@ function init() {
   gameOver = false;
   dropInterval = 1000;
   dropAccum = 0;
+  levelUpTimer = 0;
   lastTime = performance.now();
   next = randomPiece();
   spawn();
