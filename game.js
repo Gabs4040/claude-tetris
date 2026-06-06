@@ -27,6 +27,8 @@ const PIECES = [
 ];
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
+const SCORES_KEY = 'tetris_scores';
+const MAX_SCORES = 5;
 
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
@@ -35,12 +37,140 @@ const nextCtx = nextCanvas.getContext('2d');
 const scoreEl = document.getElementById('score');
 const linesEl = document.getElementById('lines');
 const levelEl = document.getElementById('level');
+const comboEl = document.getElementById('combo');
 const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
+const nameSection = document.getElementById('name-section');
+const nameInput = document.getElementById('name-input');
+const nameSaveBtn = document.getElementById('name-save-btn');
+const scoresTableBody = document.getElementById('scores-table-body');
+const startOverlay = document.getElementById('start-overlay');
+const startScoresBody = document.getElementById('start-scores-body');
+const playBtn = document.getElementById('play-btn');
+const resetBtnGame = document.getElementById('reset-records-game');
+const resetBtnStart = document.getElementById('reset-records-start');
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
+let combo, bestCombo, maxLines;
+let newEntryIndex = -1;
+
+// ---- High-score storage ----
+
+function loadScores() {
+  try {
+    const raw = localStorage.getItem(SCORES_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(e =>
+      e && typeof e.name === 'string' &&
+      typeof e.score === 'number' &&
+      typeof e.bestCombo === 'number' &&
+      typeof e.maxLines === 'number'
+    );
+  } catch (_) {
+    return [];
+  }
+}
+
+function saveScores(scores) {
+  localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
+}
+
+function qualifiesForTopN(s) {
+  if (s <= 0) return false;
+  const scores = loadScores();
+  return scores.length < MAX_SCORES || s > scores[scores.length - 1].score;
+}
+
+function addScore(name, scoreVal, bestComboVal, maxLinesVal) {
+  const scores = loadScores();
+  const entry = { name: name.trim() || 'AAA', score: scoreVal, bestCombo: bestComboVal, maxLines: maxLinesVal };
+  scores.push(entry);
+  scores.sort((a, b) => b.score - a.score);
+  const trimmed = scores.slice(0, MAX_SCORES);
+  saveScores(trimmed);
+  return trimmed.indexOf(entry);
+}
+
+function resetScores() {
+  localStorage.removeItem(SCORES_KEY);
+}
+
+// ---- Render scores table ----
+
+function renderScoresTable(tbody, highlightIndex) {
+  const scores = loadScores();
+  tbody.innerHTML = '';
+  if (scores.length === 0) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 4;
+    td.textContent = 'Sin récords aún';
+    td.style.textAlign = 'center';
+    td.style.color = '#555570';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+  scores.forEach((entry, i) => {
+    const tr = document.createElement('tr');
+    if (i === highlightIndex) {
+      tr.classList.add('score-highlight');
+    }
+    const tdRank = document.createElement('td');
+    tdRank.textContent = i === highlightIndex ? '★' : (i + 1) + '.';
+    const tdName = document.createElement('td');
+    tdName.textContent = entry.name;
+    const tdScore = document.createElement('td');
+    tdScore.textContent = entry.score.toLocaleString();
+    const tdCombo = document.createElement('td');
+    tdCombo.textContent = 'C:' + entry.bestCombo + ' L:' + entry.maxLines;
+    tr.appendChild(tdRank);
+    tr.appendChild(tdName);
+    tr.appendChild(tdScore);
+    tr.appendChild(tdCombo);
+    tbody.appendChild(tr);
+  });
+}
+
+// ---- Start screen ----
+
+function showStartScreen() {
+  renderScoresTable(startScoresBody, -1);
+  startOverlay.classList.remove('hidden');
+}
+
+function hideStartScreen() {
+  startOverlay.classList.add('hidden');
+}
+
+// ---- Game-over overlay extras ----
+
+function showGameOverExtras() {
+  newEntryIndex = -1;
+  const qualifies = qualifiesForTopN(score);
+  if (qualifies) {
+    nameSection.classList.remove('hidden');
+    nameInput.value = '';
+    setTimeout(function() { nameInput.focus(); }, 50);
+  } else {
+    nameSection.classList.add('hidden');
+  }
+  renderScoresTable(scoresTableBody, -1);
+}
+
+function handleNameSave() {
+  if (nameSection.classList.contains('hidden')) return;
+  const name = nameInput.value.trim() || 'AAA';
+  newEntryIndex = addScore(name, score, bestCombo, maxLines);
+  nameSection.classList.add('hidden');
+  renderScoresTable(scoresTableBody, newEntryIndex);
+}
+
+// ---- Board / piece logic ----
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
@@ -108,8 +238,14 @@ function clearLines() {
     score += (LINE_SCORES[cleared] || 0) * level;
     level = Math.floor(lines / 10) + 1;
     dropInterval = Math.max(100, 1000 - (level - 1) * 90);
+    combo++;
+    if (combo > bestCombo) bestCombo = combo;
+    if (lines > maxLines) maxLines = lines;
     updateHUD();
+  } else {
+    combo = 0;
   }
+  return cleared;
 }
 
 function ghostY() {
@@ -154,12 +290,19 @@ function updateHUD() {
   scoreEl.textContent = score.toLocaleString();
   linesEl.textContent = lines;
   levelEl.textContent = level;
+  const comboSection = comboEl.parentElement;
+  if (combo > 0) {
+    comboEl.textContent = 'x' + combo;
+    comboSection.classList.remove('hidden');
+  } else {
+    comboSection.classList.add('hidden');
+  }
 }
 
 function drawBlock(context, x, y, colorIndex, size, alpha) {
   if (!colorIndex) return;
   const color = COLORS[colorIndex];
-  context.globalAlpha = alpha ?? 1;
+  context.globalAlpha = alpha !== undefined ? alpha : 1;
   context.fillStyle = color;
   context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
   // highlight
@@ -222,20 +365,24 @@ function endGame() {
   gameOver = true;
   cancelAnimationFrame(animId);
   overlayTitle.textContent = 'GAME OVER';
-  overlayScore.textContent = `Puntuación: ${score.toLocaleString()}`;
+  overlayScore.textContent = 'Puntuación: ' + score.toLocaleString();
+  overlay.dataset.mode = 'gameover';
   overlay.classList.remove('hidden');
+  showGameOverExtras();
 }
 
 function togglePause() {
-  if (gameOver) return;
+  if (gameOver || !current) return;
   paused = !paused;
   if (!paused) {
+    overlay.classList.add('hidden');
     lastTime = performance.now();
     loop(lastTime);
   } else {
     cancelAnimationFrame(animId);
     overlayTitle.textContent = 'PAUSA';
     overlayScore.textContent = '';
+    overlay.dataset.mode = 'pause';
     overlay.classList.remove('hidden');
   }
 }
@@ -266,6 +413,11 @@ function init() {
   dropInterval = 1000;
   dropAccum = 0;
   lastTime = performance.now();
+  combo = 0;
+  bestCombo = 0;
+  maxLines = 0;
+  newEntryIndex = -1;
+  nameSection.classList.add('hidden');
   next = randomPiece();
   spawn();
   updateHUD();
@@ -274,9 +426,9 @@ function init() {
   animId = requestAnimationFrame(loop);
 }
 
-document.addEventListener('keydown', e => {
+document.addEventListener('keydown', function(e) {
   if (e.code === 'KeyP') { togglePause(); return; }
-  if (paused || gameOver) return;
+  if (!current || paused || gameOver) return;
   switch (e.code) {
     case 'ArrowLeft':
       if (!collide(current.shape, current.x - 1, current.y)) current.x--;
@@ -301,4 +453,27 @@ document.addEventListener('keydown', e => {
 
 restartBtn.addEventListener('click', init);
 
-init();
+// Name save
+nameSaveBtn.addEventListener('click', handleNameSave);
+nameInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') handleNameSave();
+});
+
+// Reset records buttons
+resetBtnGame.addEventListener('click', function() {
+  resetScores();
+  renderScoresTable(scoresTableBody, -1);
+});
+resetBtnStart.addEventListener('click', function() {
+  resetScores();
+  renderScoresTable(startScoresBody, -1);
+});
+
+// Play button on start screen
+playBtn.addEventListener('click', function() {
+  hideStartScreen();
+  init();
+});
+
+// Show start screen on load instead of auto-starting
+showStartScreen();
