@@ -17,6 +17,20 @@ body {
 
 .wrapper {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.game-title {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: 8px;
+  color: #7aa2f7;
+  text-shadow: 0 0 20px rgba(122, 162, 247, 0.5);
+  text-align: center;
 }
 
 .game-container {
@@ -74,6 +88,23 @@ body {
   border: 1px solid #2a2a3a;
   background: #1a1a25;
   border-radius: 4px;
+}
+
+/* ---- Skin selector ---- */
+#skin-select {
+  background: #22223a;
+  border: 1px solid #3a3a5a;
+  border-radius: 4px;
+  color: #aaa;
+  font-size: 12px;
+  font-family: inherit;
+  padding: 4px 6px;
+  cursor: pointer;
+  width: 100%;
+}
+
+#skin-select:focus {
+  outline: 1px solid #7aa2f7;
 }
 
 /* ---- Controles ---- */
@@ -160,74 +191,100 @@ kbd {
   background: #9bbdff;
 }
 
-/* ---- Hidden utility ---- */
-.hidden {
-  display: none !important;
-}
-
-/* Hide scores / name entry when overlay is in pause mode */
-#overlay[data-mode="pause"] #scores-section,
-#overlay[data-mode="pause"] #name-section {
-  display: none !important;
-}
-
-/* ---- Name entry ---- */
-.name-prompt {
-  font-size: 13px;
-  color: #ffd54f;
-  letter-spacing: 1px;
-  margin-bottom: 4px;
-}
-
-.name-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  justify-content: center;
-}
-
-#name-input {
-  background: #1a1a25;
-  border: 1px solid #7aa2f7;
-  border-radius: 4px;
-  color: #e0e0e0;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 14px;
-  padding: 6px 10px;
-  width: 110px;
-  outline: none;
-}
-
-#name-input:focus {
-  border-color: #ffd54f;
-}
-
-.action-btn {
-  background: #7aa2f7;
-  color: #0f0f17;
-  border: none;
-  border-radius: 4px;
-  padding: 6px 14px;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.action-btn:hover {
-  background: #9bbdff;
-}
-
-/* ---- Scores table ---- */
-.scores-section {
-  display: flex;
+/* ---- Pause menu ---- */
+/* By default the pause menu is hidden; shown when overlay is in pause mode */
+.pause-menu {
+  display: none;
   flex-direction: column;
+  gap: 10px;
   align-items: center;
-  gap: 8px;
   width: 100%;
 }
 
-.scores-title {
+#overlay[data-mode="pause"] #restart-btn {
+  display: none;
+}
+
+#overlay[data-mode="pause"] #overlay-score {
+  display: none;
+}
+
+#overlay[data-mode="pause"] .pause-menu {
+  display: flex;
+}
+
+#overlay[data-mode="gameover"] .pause-menu {
+  display: none;
+}
+
+.pause-menu button {
+  background: #2a2a45;
+  color: #e0e0e0;
+  border: 1px solid #3a3a5a;
+  border-radius: 6px;
+  padding: 10px 32px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+  width: 200px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.pause-menu button:hover {
+  background: #3a3a60;
+  border-color: #7aa2f7;
+}
+
+#resume-btn {
+  background: #7aa2f7;
+  color: #0f0f17;
+  border-color: #7aa2f7;
+}
+
+#resume-btn:hover {
+  background: #9bbdff;
+  border-color: #9bbdff;
+}
+
+.pause-controls {
+  background: #1a1a2e;
+  border: 1px solid #3a3a5a;
+  border-radius: 6px;
+  padding: 12px 20px;
+  width: 200px;
+}
+
+.pause-controls.hidden {
+  display: none;
+}
+
+.pause-controls ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pause-controls li {
+  font-size: 12px;
+  color: #888;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ---- Nivel inicial selector ---- */
+.nivel-inicial {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #888;
+  letter-spacing: 1px;
+}
+
+.nivel-inicial label {
   font-size: 11px;
   letter-spacing: 2px;
   color: #555570;
@@ -235,77 +292,20 @@ kbd {
   text-transform: uppercase;
 }
 
-.scores-table {
-  border-collapse: collapse;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 12px;
-  width: 100%;
-}
-
-.scores-table th {
-  color: #555570;
-  font-size: 10px;
-  letter-spacing: 1px;
-  padding: 2px 6px;
-  text-align: left;
-  border-bottom: 1px solid #22222e;
-}
-
-.scores-table td {
-  padding: 3px 6px;
-  color: #aaa;
-  text-align: left;
-}
-
-.scores-table tr.score-highlight td {
-  color: #ffd54f;
-  font-weight: 700;
-}
-
-.reset-btn {
-  background: transparent;
+.nivel-inicial select {
+  background: #22223a;
+  color: #e0e0e0;
   border: 1px solid #3a3a5a;
   border-radius: 4px;
-  color: #555570;
-  font-size: 11px;
-  padding: 4px 12px;
+  padding: 4px 8px;
+  font-size: 13px;
+  font-family: 'Courier New', Courier, monospace;
   cursor: pointer;
-  letter-spacing: 1px;
-  transition: border-color 0.15s, color 0.15s;
+  outline: none;
+  transition: border-color 0.15s;
 }
 
-.reset-btn:hover {
-  border-color: #e57373;
-  color: #e57373;
-}
-
-/* ---- Start screen ---- */
-.start-box {
-  padding: 24px 16px;
-}
-
-.start-title {
-  font-size: 36px;
-  font-weight: 800;
-  letter-spacing: 6px;
-  color: #7aa2f7;
-  text-shadow: 0 0 20px rgba(122, 162, 247, 0.4);
-}
-
-.play-btn {
-  background: #7aa2f7;
-  color: #0f0f17;
-  border: none;
-  border-radius: 6px;
-  padding: 12px 40px;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  letter-spacing: 2px;
-  transition: background 0.15s;
-  margin-top: 4px;
-}
-
-.play-btn:hover {
-  background: #9bbdff;
+.nivel-inicial select:hover,
+.nivel-inicial select:focus {
+  border-color: #7aa2f7;
 }

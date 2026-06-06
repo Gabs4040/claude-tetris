@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tetris</title>
+  <title>Tetris 2</title>
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
   <div class="wrapper">
+    <h1 class="game-title">TETRIS</h1>
     <div class="game-container">
       <canvas id="board" width="300" height="600"></canvas>
 
@@ -34,6 +37,16 @@
           <canvas id="next-canvas" width="120" height="120"></canvas>
         </div>
 
+        <div class="panel-section">
+          <span class="label">TEMA</span>
+          <select id="skin-select">
+            <option value="retro">Retro</option>
+            <option value="neon">Neon</option>
+            <option value="pastel">Pastel</option>
+            <option value="pixelart">Pixel art</option>
+          </select>
+        </div>
+
         <div class="panel-section controls">
           <span class="label">CONTROLS</span>
           <ul>
@@ -47,7 +60,6 @@
       </aside>
     </div>
 
-    <!-- Game-over / pause overlay -->
     <div id="overlay" class="overlay hidden" data-mode="gameover">
       <div class="overlay-box">
         <p id="overlay-title">GAME OVER</p>
@@ -80,6 +92,37 @@
         </div>
 
         <button id="restart-btn">Reiniciar</button>
+
+        <!-- Pause menu — visible only when data-mode="pause" on #overlay -->
+        <div id="pause-menu" class="pause-menu">
+          <button id="resume-btn">Reanudar</button>
+          <button id="restart-pause-btn">Reiniciar</button>
+          <button id="controls-btn">Ver controles</button>
+          <div id="pause-controls" class="pause-controls hidden">
+            <ul>
+              <li><kbd>←</kbd><kbd>→</kbd> mover</li>
+              <li><kbd>↑</kbd> rotar</li>
+              <li><kbd>↓</kbd> bajar</li>
+              <li><kbd>Space</kbd> caída</li>
+              <li><kbd>P</kbd> / <kbd>Esc</kbd> pausa</li>
+            </ul>
+          </div>
+          <div class="nivel-inicial">
+            <label for="start-level">Nivel inicial</label>
+            <select id="start-level">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+              <option value="9">9</option>
+              <option value="10">10</option>
+            </select>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -111,4 +154,5 @@
 
   <script src="game.js"></script>
 </body>
+
 </html>
