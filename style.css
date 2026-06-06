@@ -164,3 +164,122 @@ kbd {
 #restart-btn:hover {
   background: #9bbdff;
 }
+
+/* ---- Pause menu ---- */
+/* By default the pause menu is hidden; shown when overlay is in pause mode */
+.pause-menu {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+}
+
+#overlay[data-mode="pause"] #restart-btn {
+  display: none;
+}
+
+#overlay[data-mode="pause"] #overlay-score {
+  display: none;
+}
+
+#overlay[data-mode="pause"] .pause-menu {
+  display: flex;
+}
+
+#overlay[data-mode="gameover"] .pause-menu {
+  display: none;
+}
+
+.pause-menu button {
+  background: #2a2a45;
+  color: #e0e0e0;
+  border: 1px solid #3a3a5a;
+  border-radius: 6px;
+  padding: 10px 32px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+  width: 200px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.pause-menu button:hover {
+  background: #3a3a60;
+  border-color: #7aa2f7;
+}
+
+#resume-btn {
+  background: #7aa2f7;
+  color: #0f0f17;
+  border-color: #7aa2f7;
+}
+
+#resume-btn:hover {
+  background: #9bbdff;
+  border-color: #9bbdff;
+}
+
+.pause-controls {
+  background: #1a1a2e;
+  border: 1px solid #3a3a5a;
+  border-radius: 6px;
+  padding: 12px 20px;
+  width: 200px;
+}
+
+.pause-controls.hidden {
+  display: none;
+}
+
+.pause-controls ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pause-controls li {
+  font-size: 12px;
+  color: #888;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ---- Nivel inicial selector ---- */
+.nivel-inicial {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #888;
+  letter-spacing: 1px;
+}
+
+.nivel-inicial label {
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: #555570;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.nivel-inicial select {
+  background: #22223a;
+  color: #e0e0e0;
+  border: 1px solid #3a3a5a;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 13px;
+  font-family: 'Courier New', Courier, monospace;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.nivel-inicial select:hover,
+.nivel-inicial select:focus {
+  border-color: #7aa2f7;
+}
