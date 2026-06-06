@@ -493,25 +493,9 @@ function init() {
   animId = requestAnimationFrame(loop);
 }
 
-document.addEventListener('keydown', function(e) {
-  if (e.code === 'KeyP') { togglePause(); return; }
-  if (!current || paused || gameOver) return;
-// Skin selector
-skinSelect.value = currentSkin;
-skinSelect.addEventListener('change', function() {
-  currentSkin = skinSelect.value;
-  localStorage.setItem('tetris_skin', currentSkin);
-  applyBoardBg();
-  draw();
-  drawNext();
-});
-
-// Apply saved skin on load
-applyBoardBg();
-
 document.addEventListener('keydown', e => {
   if (e.code === 'KeyP' || e.code === 'Escape') { togglePause(); return; }
-  if (paused || gameOver) return;
+  if (!current || paused || gameOver) return;
   switch (e.code) {
     case 'ArrowLeft':
       if (!collide(current.shape, current.x - 1, current.y)) current.x--;
@@ -558,8 +542,19 @@ playBtn.addEventListener('click', function() {
   init();
 });
 
-// Show start screen on load instead of auto-starting
-showStartScreen();
+// Skin selector
+skinSelect.value = currentSkin;
+skinSelect.addEventListener('change', function() {
+  currentSkin = skinSelect.value;
+  localStorage.setItem('tetris_skin', currentSkin);
+  applyBoardBg();
+  draw();
+  drawNext();
+});
+
+// Apply saved skin on load
+applyBoardBg();
+
 // Pause menu buttons
 resumeBtn.addEventListener('click', togglePause);
 restartPauseBtn.addEventListener('click', init);
@@ -567,4 +562,5 @@ controlsBtn.addEventListener('click', () => {
   pauseControls.classList.toggle('hidden');
 });
 
-init();
+// Show start screen on load instead of auto-starting
+showStartScreen();
