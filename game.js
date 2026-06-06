@@ -197,6 +197,8 @@ const PIECES = [
 ];
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
+const SCORES_KEY = 'tetris_scores';
+const MAX_SCORES = 5;
 
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
@@ -205,6 +207,7 @@ const nextCtx = nextCanvas.getContext('2d');
 const scoreEl = document.getElementById('score');
 const linesEl = document.getElementById('lines');
 const levelEl = document.getElementById('level');
+const comboEl = document.getElementById('combo');
 const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
@@ -285,9 +288,15 @@ function clearLines() {
     const prevLevel = level;
     level = Math.floor(lines / 10) + 1;
     dropInterval = Math.max(100, 1000 - (level - 1) * 90);
+    combo++;
+    if (combo > bestCombo) bestCombo = combo;
+    if (lines > maxLines) maxLines = lines;
     if (level > prevLevel) levelUpTimer = 1500;
     updateHUD();
+  } else {
+    combo = 0;
   }
+  return cleared;
 }
 
 function ghostY() {
@@ -332,6 +341,13 @@ function updateHUD() {
   scoreEl.textContent = score.toLocaleString();
   linesEl.textContent = lines;
   levelEl.textContent = level;
+  const comboSection = comboEl.parentElement;
+  if (combo > 0) {
+    comboEl.textContent = 'x' + combo;
+    comboSection.classList.remove('hidden');
+  } else {
+    comboSection.classList.add('hidden');
+  }
 }
 
 function applyBoardBg() {
@@ -341,6 +357,15 @@ function applyBoardBg() {
 }
 
 function drawBlock(context, x, y, colorIndex, size, alpha) {
+  if (!colorIndex) return;
+  const color = COLORS[colorIndex];
+  context.globalAlpha = alpha !== undefined ? alpha : 1;
+  context.fillStyle = color;
+  context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
+  // highlight
+  context.fillStyle = 'rgba(255,255,255,0.12)';
+  context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
+  context.globalAlpha = 1;
   SKINS[currentSkin].drawBlock(context, x, y, colorIndex, size, alpha);
 }
 
@@ -399,13 +424,15 @@ function endGame() {
   gameOver = true;
   cancelAnimationFrame(animId);
   overlayTitle.textContent = 'GAME OVER';
+  overlayScore.textContent = 'Puntuación: ' + score.toLocaleString();
   overlayScore.textContent = `Puntuación: ${score.toLocaleString()}`;
   overlay.dataset.mode = 'gameover';
   overlay.classList.remove('hidden');
+  showGameOverExtras();
 }
 
 function togglePause() {
-  if (gameOver) return;
+  if (gameOver || !current) return;
   paused = !paused;
   if (!paused) {
     // Collapse controls list when resuming
@@ -416,6 +443,7 @@ function togglePause() {
   } else {
     cancelAnimationFrame(animId);
     overlayTitle.textContent = 'PAUSA';
+    overlayScore.textContent = '';
     overlay.dataset.mode = 'pause';
     overlay.classList.remove('hidden');
   }
@@ -449,6 +477,11 @@ function init() {
   dropAccum = 0;
   levelUpTimer = 0;
   lastTime = performance.now();
+  combo = 0;
+  bestCombo = 0;
+  maxLines = 0;
+  newEntryIndex = -1;
+  nameSection.classList.add('hidden');
   // Collapse controls list so it doesn't carry over between games
   pauseControls.classList.add('hidden');
   overlay.dataset.mode = 'gameover';
@@ -460,6 +493,9 @@ function init() {
   animId = requestAnimationFrame(loop);
 }
 
+document.addEventListener('keydown', function(e) {
+  if (e.code === 'KeyP') { togglePause(); return; }
+  if (!current || paused || gameOver) return;
 // Skin selector
 skinSelect.value = currentSkin;
 skinSelect.addEventListener('change', function() {
@@ -500,6 +536,30 @@ document.addEventListener('keydown', e => {
 
 restartBtn.addEventListener('click', init);
 
+// Name save
+nameSaveBtn.addEventListener('click', handleNameSave);
+nameInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') handleNameSave();
+});
+
+// Reset records buttons
+resetBtnGame.addEventListener('click', function() {
+  resetScores();
+  renderScoresTable(scoresTableBody, -1);
+});
+resetBtnStart.addEventListener('click', function() {
+  resetScores();
+  renderScoresTable(startScoresBody, -1);
+});
+
+// Play button on start screen
+playBtn.addEventListener('click', function() {
+  hideStartScreen();
+  init();
+});
+
+// Show start screen on load instead of auto-starting
+showStartScreen();
 // Pause menu buttons
 resumeBtn.addEventListener('click', togglePause);
 restartPauseBtn.addEventListener('click', init);

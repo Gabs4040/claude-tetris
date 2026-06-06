@@ -27,6 +27,10 @@
           <span class="label">LEVEL</span>
           <span class="value" id="level">1</span>
         </div>
+        <div class="panel-section hidden" id="combo-section">
+          <span class="label">COMBO</span>
+          <span class="value combo-value" id="combo">x1</span>
+        </div>
 
         <div class="panel-section">
           <span class="label">NEXT</span>
@@ -60,6 +64,33 @@
       <div class="overlay-box">
         <p id="overlay-title">GAME OVER</p>
         <p id="overlay-score"></p>
+
+        <!-- Name entry (shown only when score qualifies) -->
+        <div id="name-section" class="hidden">
+          <p class="name-prompt">¡Récord! Tu nombre:</p>
+          <div class="name-row">
+            <input id="name-input" type="text" maxlength="12" placeholder="AAA" autocomplete="off" />
+            <button id="name-save-btn" class="action-btn">Guardar</button>
+          </div>
+        </div>
+
+        <!-- Top-5 table -->
+        <div id="scores-section" class="scores-section">
+          <p class="scores-title">Récords</p>
+          <table class="scores-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Nombre</th>
+                <th>Puntos</th>
+                <th>Stats</th>
+              </tr>
+            </thead>
+            <tbody id="scores-table-body"></tbody>
+          </table>
+          <button id="reset-records-game" class="reset-btn">Resetear récords</button>
+        </div>
+
         <button id="restart-btn">Reiniciar</button>
 
         <!-- Pause menu — visible only when data-mode="pause" on #overlay -->
@@ -92,6 +123,31 @@
             </select>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Start screen overlay -->
+    <div id="start-overlay" class="overlay hidden">
+      <div class="overlay-box start-box">
+        <p class="start-title">TETRIS</p>
+
+        <div class="scores-section">
+          <p class="scores-title">Récords</p>
+          <table class="scores-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Nombre</th>
+                <th>Puntos</th>
+                <th>Stats</th>
+              </tr>
+            </thead>
+            <tbody id="start-scores-body"></tbody>
+          </table>
+          <button id="reset-records-start" class="reset-btn">Resetear récords</button>
+        </div>
+
+        <button id="play-btn" class="play-btn">Jugar</button>
       </div>
     </div>
   </div>
