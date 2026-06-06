@@ -210,8 +210,13 @@ const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
 const skinSelect = document.getElementById('skin-select');
+const resumeBtn = document.getElementById('resume-btn');
+const restartPauseBtn = document.getElementById('restart-pause-btn');
+const controlsBtn = document.getElementById('controls-btn');
+const pauseControls = document.getElementById('pause-controls');
+const startLevelSelect = document.getElementById('start-level');
 
-let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
+let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId, levelUpTimer;
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
@@ -277,8 +282,10 @@ function clearLines() {
   if (cleared) {
     lines += cleared;
     score += (LINE_SCORES[cleared] || 0) * level;
+    const prevLevel = level;
     level = Math.floor(lines / 10) + 1;
     dropInterval = Math.max(100, 1000 - (level - 1) * 90);
+    if (level > prevLevel) levelUpTimer = 1500;
     updateHUD();
   }
 }
@@ -361,6 +368,20 @@ function draw() {
   for (let r = 0; r < current.shape.length; r++)
     for (let c = 0; c < current.shape[r].length; c++)
       drawBlock(ctx, current.x + c, current.y + r, current.shape[r][c], BLOCK);
+
+  if (levelUpTimer > 0) {
+    const alpha = levelUpTimer / 1500;
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = '#ffd54f';
+    ctx.font = 'bold 30px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('¡NIVEL ' + level + '!', canvas.width / 2, canvas.height / 2 - 10);
+    ctx.font = '16px monospace';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText('¡Más rápido!', canvas.width / 2, canvas.height / 2 + 20);
+    ctx.globalAlpha = 1;
+    ctx.textAlign = 'left';
+  }
 }
 
 function drawNext() {
@@ -379,6 +400,7 @@ function endGame() {
   cancelAnimationFrame(animId);
   overlayTitle.textContent = 'GAME OVER';
   overlayScore.textContent = `Puntuación: ${score.toLocaleString()}`;
+  overlay.dataset.mode = 'gameover';
   overlay.classList.remove('hidden');
 }
 
@@ -386,12 +408,15 @@ function togglePause() {
   if (gameOver) return;
   paused = !paused;
   if (!paused) {
+    // Collapse controls list when resuming
+    pauseControls.classList.add('hidden');
+    overlay.classList.add('hidden');
     lastTime = performance.now();
     loop(lastTime);
   } else {
     cancelAnimationFrame(animId);
     overlayTitle.textContent = 'PAUSA';
-    overlayScore.textContent = '';
+    overlay.dataset.mode = 'pause';
     overlay.classList.remove('hidden');
   }
 }
@@ -400,6 +425,7 @@ function loop(ts) {
   const dt = ts - lastTime;
   lastTime = ts;
   dropAccum += dt;
+  if (levelUpTimer > 0) levelUpTimer = Math.max(0, levelUpTimer - dt);
   if (dropAccum >= dropInterval) {
     dropAccum = 0;
     if (!collide(current.shape, current.x, current.y + 1)) {
@@ -416,16 +442,20 @@ function init() {
   board = createBoard();
   score = 0;
   lines = 0;
-  level = 1;
+  level = parseInt(startLevelSelect.value, 10) || 1;
   paused = false;
   gameOver = false;
-  dropInterval = 1000;
+  dropInterval = Math.max(100, 1000 - (level - 1) * 90);
   dropAccum = 0;
+  levelUpTimer = 0;
   lastTime = performance.now();
+  // Collapse controls list so it doesn't carry over between games
+  pauseControls.classList.add('hidden');
+  overlay.dataset.mode = 'gameover';
+  overlay.classList.add('hidden');
   next = randomPiece();
   spawn();
   updateHUD();
-  overlay.classList.add('hidden');
   cancelAnimationFrame(animId);
   animId = requestAnimationFrame(loop);
 }
@@ -444,7 +474,7 @@ skinSelect.addEventListener('change', function() {
 applyBoardBg();
 
 document.addEventListener('keydown', e => {
-  if (e.code === 'KeyP') { togglePause(); return; }
+  if (e.code === 'KeyP' || e.code === 'Escape') { togglePause(); return; }
   if (paused || gameOver) return;
   switch (e.code) {
     case 'ArrowLeft':
@@ -469,5 +499,12 @@ document.addEventListener('keydown', e => {
 });
 
 restartBtn.addEventListener('click', init);
+
+// Pause menu buttons
+resumeBtn.addEventListener('click', togglePause);
+restartPauseBtn.addEventListener('click', init);
+controlsBtn.addEventListener('click', () => {
+  pauseControls.classList.toggle('hidden');
+});
 
 init();
